@@ -253,7 +253,7 @@ Distributed under the MIT License.
 ## 👨‍💻 Author
 
 **Parth Bhat**
-- GitHub: [@parthbhat](https://github.com/parthbhat)
+- GitHub: [@parthbhat](https://github.com/parthgenx)
 - LinkedIn: https://www.linkedin.com/in/parth-bhat-574095224/
 
 ---
