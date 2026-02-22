@@ -254,7 +254,7 @@ Distributed under the MIT License.
 
 **Parth Bhat**
 - GitHub: [@parthbhat](https://github.com/parthbhat)
-- LinkedIn: [linkedin.com/in/parth-bhat](https://linkedin.com/in/parth-bhat)
+- LinkedIn: https://www.linkedin.com/in/parth-bhat-574095224/
 
 ---
 
