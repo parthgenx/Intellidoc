@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from supabase import create_client
@@ -65,7 +65,7 @@ async def chat_with_document(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(file: UploadFile = File(...),user_id: str = Form(...)):
     """Upload and process a PDF document"""
     temp_file_path = None
     
@@ -88,15 +88,15 @@ async def upload_document(file: UploadFile = File(...)):
         
         print(f"💾 Saved temp file: {temp_file_path}")
         
-        # Upload to Supabase Storage
-        storage_response = supabase.storage.from_('documents').upload(
+        # Upload to Supabase Storage (using admin client to bypass RLS)
+        storage_response = supabase_admin.storage.from_('documents').upload(
             unique_filename,
             content,
             {"content-type": file.content_type}
         )
         
         # Get public URL
-        file_url = supabase.storage.from_('documents').get_public_url(unique_filename)
+        file_url = supabase_admin.storage.from_('documents').get_public_url(unique_filename)
         print(f"☁️ Uploaded to storage: {file_url}")
         
         # Extract text from PDF
@@ -107,13 +107,13 @@ async def upload_document(file: UploadFile = File(...)):
         print("📦 Creating text chunks...")
         chunks = document_processor.chunk_text(extracted_text)
         
-        # Save metadata to database
-        db_response = supabase.table('documents').insert({
+        # Save metadata to database (use admin client to bypass RLS)
+        db_response = supabase_admin.table('documents').insert({
             "filename": file.filename,
             "file_url": file_url,
             "file_size": len(content),
             "status": "processing",
-            "user_id": None
+            "user_id": user_id
         }).execute()
         
         document_id = db_response.data[0]['id']
@@ -161,10 +161,13 @@ async def upload_document(file: UploadFile = File(...)):
             print(f"🗑️ Cleaned up temp file")
     
 @app.get("/api/documents")
-async def get_documents():
-    """Get all documents"""
+async def get_documents(user_id: str = None):
+    """Get documents for a specific user"""
     try:
-        response = supabase.table('documents').select('*').order('created_at', desc=True).execute()
+        if user_id:
+            response = supabase_admin.table('documents').select('*').eq('user_id', user_id).order('created_at', desc=True).execute()
+        else:
+            response = supabase_admin.table('documents').select('*').order('created_at', desc=True).execute()
         return {"documents": response.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -172,8 +175,8 @@ async def get_documents():
 async def delete_document(document_id: str):
     """Delete a document"""
     try:
-        # Delete from database (cascades to chunks)
-        supabase.table('documents').delete().eq('id', document_id).execute()
+        # Delete from database using admin client (cascades to chunks)
+        supabase_admin.table('documents').delete().eq('id', document_id).execute()
         return {"message": "Document deleted"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

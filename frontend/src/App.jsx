@@ -1,62 +1,72 @@
 import { useState } from 'react'
-import FileUpload from './components/FileUpload'
-import DocumentList from './components/DocumentList'
-import DocumentViewer from './components/DocumentViewer'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+import Dashboard from './pages/Dashboard'
+
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />
+  }
+
+  return children
+}
+
 function App() {
-  const [selectedDocument, setSelectedDocument] = useState(null)
-  const [refreshKey, setRefreshKey] = useState(0)
-  const [chatHistory, setChatHistory] = useState({}) // Store chat per document
-  const handleUploadSuccess = () => {
-    setRefreshKey(prev => prev + 1)
-  }
-  const handleSelectDocument = (doc) => {
-    setSelectedDocument(doc)
-    // Initialize chat history for this document if it doesn't exist
-    if (!chatHistory[doc.id]) {
-      setChatHistory(prev => ({
-        ...prev,
-        [doc.id]: []
-      }))
-    }
-  }
-  const handleCloseViewer = () => {
-    setSelectedDocument(null)
-  }
-  const updateChatHistory = (documentId, messages) => {
-    setChatHistory(prev => ({
-      ...prev,
-      [documentId]: messages
-    }))
-  }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-      {/* Header */}
-      <header className="glass m-4 p-6">
-        <h1 className="text-4xl font-bold text-white">
-          IntelliDoc
-        </h1>
-        <p className="text-gray-300 mt-2">
-          AI-Powered Document Intelligence Platform
-        </p>
-      </header>
-      {/* Main Content */}
-      <main className="p-4 grid md:grid-cols-2 gap-4">
-        <FileUpload onUploadSuccess={handleUploadSuccess} />
-        <DocumentList
-          key={refreshKey}
-          onSelectDocument={handleSelectDocument}
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+
+        <Toaster 
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#1f2937',
+              color: '#fff',
+              border: '1px solid #374151',
+            },
+            success: {
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
         />
-      </main>
-      {/* Document Viewer Modal */}
-      {selectedDocument && (
-        <DocumentViewer
-          document={selectedDocument}
-          onClose={handleCloseViewer}
-          chatMessages={chatHistory[selectedDocument.id] || []}
-          onUpdateChat={(messages) => updateChatHistory(selectedDocument.id, messages)}
-        />
-      )}
-    </div>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
+
 export default App

@@ -1,122 +1,263 @@
-# IntelliDoc - AI-Powered Document Intelligence Platform
+<div align="center">
 
-IntelliDoc is an industry-grade AI platform that enables intelligent document processing, analysis, and interaction using advanced AI technologies.
+# 🧠 IntelliDoc
+### AI-Powered Document Intelligence Platform
 
-## 🚀 Features
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20DB-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Pinecone](https://img.shields.io/badge/Pinecone-Vector%20DB-000000?style=for-the-badge)](https://www.pinecone.io/)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
 
-- **Multi-format Document Upload**: Support for PDF, DOCX, TXT, and more
-- **AI-Powered Chat**: Interactive conversations with your documents using Google Gemini 2.0 Flash
-- **RAG (Retrieval Augmented Generation)**: Context-aware responses using Pinecone vector database
-- **Smart Extraction**: Document summarization and entity recognition
-- **Persistent Storage**: Secure document storage with Supabase
-- **Modern UI**: Beautiful, responsive React interface with TailwindCSS
+**Upload your PDFs and have an intelligent conversation with them — powered by RAG and Google Gemini AI.**
+
+[📖 API Docs](http://localhost:8000/docs) · [🐛 Report Bug](../../issues) · [💡 Request Feature](../../issues)
+
+</div>
+
+---
+
+## 📸 Screenshots
+
+> *Coming soon — deploy and add screenshots here!*
+
+---
+
+## 🌟 Features
+
+| Feature | Description |
+|---------|-------------|
+| 📤 **Document Upload** | Drag & drop PDF upload with real-time progress bar |
+| 🤖 **AI Chat** | Ask questions and get context-aware AI answers |
+| 🔍 **RAG Pipeline** | Retrieval-Augmented Generation using Pinecone vector search |
+| 🔐 **Authentication** | Secure user accounts via Supabase Auth |
+| 👤 **Per-user Storage** | Each user only sees their own documents |
+| 🔒 **Row Level Security** | RLS policies enforced at the database level |
+| 🎨 **Modern UI** | Glass morphism design with smooth animations |
+| 🔔 **Live Feedback** | Toast notifications and skeleton loading states |
+
+---
+
+## 🏗️ Architecture
+
+```
+┌───────────────────────────────────────────────────┐
+│               Frontend (React 19 + Vite)           │
+│   FileUpload · DocumentList · ChatInterface · Auth │
+└──────────────────────┬────────────────────────────┘
+                       │ REST API (Axios)
+┌──────────────────────▼────────────────────────────┐
+│              Backend (FastAPI / Python 3.12)        │
+│   /api/upload · /api/chat · /api/documents         │
+│                                                    │
+│  ┌─────────────┐ ┌──────────────┐ ┌─────────────┐ │
+│  │ RAG Service │ │ Doc Processor│ │ Supabase    │ │
+│  │ (LangChain) │ │ (PyMuPDF)    │ │ Admin Client│ │
+│  └──────┬──────┘ └──────┬───────┘ └──────┬──────┘ │
+└─────────┼───────────────┼────────────────┼─────────┘
+          │               │                │
+   ┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐
+   │   Pinecone  │ │  Supabase   │ │   Google    │
+   │  Vector DB  │ │  Storage/DB │ │  Gemini AI  │
+   └─────────────┘ └─────────────┘ └─────────────┘
+```
+
+---
 
 ## 🛠️ Tech Stack
 
 ### Backend
-- **FastAPI** - High-performance Python web framework
-- **Supabase** - Database and authentication
-- **Pinecone** - Vector database for embeddings
-- **Google Gemini AI** - Advanced language model
-- **Google Embeddings** - Document vectorization
+| Technology | Purpose |
+|-----------|---------|
+| **FastAPI** | High-performance REST API |
+| **Supabase** | PostgreSQL database, file storage & auth |
+| **Pinecone** | Vector database for semantic search |
+| **Google Gemini 2.0 Flash** | LLM for AI responses & embeddings |
+| **LangChain** | RAG orchestration |
+| **PyMuPDF** | PDF text extraction |
 
 ### Frontend
-- **React 19** - Modern UI library
-- **Vite** - Fast build tool
-- **TailwindCSS** - Utility-first CSS framework
-- **Axios** - HTTP client
-- **React Router** - Navigation
-- **React Markdown** - Markdown rendering
+| Technology | Purpose |
+|-----------|---------|
+| **React 19** | UI library |
+| **Vite** | Lightning-fast build tool |
+| **TailwindCSS** | Utility-first styling |
+| **React Router v6** | Client-side routing |
+| **Supabase JS** | Auth & session management |
+| **react-hot-toast** | Notification system |
 
-## 📋 Prerequisites
-
-- Python 3.9+
-- Node.js 18+
-- Git
+---
 
 ## 🚀 Quick Start
 
-### Clone the Repository
-\`\`\`bash
-git clone <your-repo-url>
-cd IntelliDoc
-\`\`\`
+### Prerequisites
+- Python 3.12+
+- Node.js 18+
+- [Supabase](https://supabase.com) account (free)
+- [Pinecone](https://pinecone.io) account (free)
+- [Google AI Studio](https://aistudio.google.com) API key (free)
 
-### Backend Setup
-\`\`\`bash
+### 1. Clone the Repository
+```bash
+git clone https://github.com/YOUR_USERNAME/intellidoc.git
+cd intellidoc
+```
+
+### 2. Backend Setup
+```bash
 cd backend
+
+# Create and activate virtual environment
 python -m venv venv
+source venv/bin/activate        # macOS/Linux
+# venv\Scripts\activate         # Windows
 
-# Windows
-venv\\Scripts\\activate
-
-# macOS/Linux
-source venv/bin/activate
-
+# Install dependencies
 pip install -r requirements.txt
 
-# Copy .env.example to .env and fill in your API keys
+# Configure environment variables
 cp .env.example .env
+# Fill in your API keys in .env
 
-# Start the backend
+# Start the server
 uvicorn app.main:app --reload
-\`\`\`
+```
 
-### Frontend Setup
-\`\`\`bash
+### 3. Frontend Setup
+```bash
 cd frontend
-npm install
-npm run dev
-\`\`\`
 
-The application will be available at:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
+# Install dependencies
+npm install
+
+# Configure environment variables
+cp .env.example .env
+# Fill in your Supabase credentials in .env
+
+# Start the dev server
+npm run dev
+```
+
+### 4. Open the App
+
+| Service | URL |
+|---------|-----|
+| 🌐 Frontend | http://localhost:5173 |
+| ⚙️ Backend API | http://localhost:8000 |
+| 📖 Swagger Docs | http://localhost:8000/docs |
+
+---
 
 ## 🔑 Environment Variables
 
-Create a `.env` file in the `backend` directory with:
-
-\`\`\`env
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_key
+### `backend/.env`
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 GEMINI_API_KEY=your_gemini_api_key
 PINECONE_API_KEY=your_pinecone_api_key
-\`\`\`
+```
 
-## 📖 Migration Guide
+### `frontend/.env`
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-If you're setting up this project on a new machine (especially macOS), see the detailed [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for step-by-step instructions.
+> ⚠️ Never commit `.env` files. Use the `.env.example` templates provided.
 
-## 🏗️ Project Structure
+---
 
-\`\`\`
-IntelliDoc/
+## 📁 Project Structure
+
+```
+intellidoc/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py              # FastAPI application
-│   │   ├── models.py            # Data models
-│   │   ├── services.py          # Business logic
-│   │   ├── rag_service.py       # RAG implementation
-│   │   └── document_processor.py # Document processing
+│   │   ├── main.py                 # FastAPI app & all API routes
+│   │   ├── rag_service.py          # RAG pipeline (embed → retrieve → generate)
+│   │   ├── document_processor.py  # PDF parsing & text chunking
+│   │   └── models.py               # Pydantic request/response models
 │   ├── requirements.txt
 │   └── .env.example
+│
 ├── frontend/
 │   ├── src/
-│   │   ├── components/          # React components
-│   │   ├── pages/               # Page components
-│   │   └── App.jsx              # Main app component
+│   │   ├── components/
+│   │   │   ├── FileUpload.jsx      # Drag & drop upload with progress
+│   │   │   ├── DocumentList.jsx   # User document library with search
+│   │   │   ├── ChatInterface.jsx  # AI chat with markdown rendering
+│   │   │   ├── DocumentViewer.jsx # PDF viewer panel
+│   │   │   └── LoadingSpinner.jsx # Reusable loading component
+│   │   ├── pages/
+│   │   │   ├── Login.jsx           # Login page
+│   │   │   ├── Signup.jsx          # Registration page
+│   │   │   └── Dashboard.jsx       # Main app dashboard
+│   │   ├── contexts/
+│   │   │   └── AuthContext.jsx     # Global authentication state
+│   │   └── services/
+│   │       ├── api.js              # Axios HTTP client
+│   │       └── supabase.js         # Supabase client instance
 │   ├── package.json
 │   └── vite.config.js
+│
 └── README.md
-\`\`\`
+```
+
+---
+
+## 🔄 How It Works
+
+### Upload Flow
+```
+User drops PDF
+  → Frontend sends file + user_id to /api/upload
+  → PyMuPDF extracts text
+  → Text split into overlapping chunks
+  → Gemini generates embeddings for each chunk
+  → Chunks + embeddings stored in Pinecone
+  → Document metadata stored in Supabase
+  → User sees success notification ✅
+```
+
+### Chat Flow
+```
+User types question
+  → Frontend sends question + document_id to /api/chat
+  → Gemini embeds the question
+  → Pinecone returns top-K similar chunks
+  → Chunks + question sent to Gemini as context
+  → Gemini generates a grounded answer
+  → Response rendered with Markdown ✅
+```
+
+---
+
+## 🔐 Security
+
+- **Supabase RLS** – users can only read/write their own rows
+- **JWT sessions** – managed by Supabase Auth
+- **Service Role separation** – admin key stays on server only; frontend uses anon key
+- **No secrets in code** – all credentials via environment variables
+
+---
 
 ## 📝 License
 
-This project is for portfolio purposes.
+Distributed under the MIT License.
 
-## 🤝 Contributing
+---
 
-This is a personal portfolio project, but feedback and suggestions are welcome!
+## 👨‍💻 Author
+
+**Parth Bhat**
+- GitHub: [@parthbhat](https://github.com/parthbhat)
+- LinkedIn: [linkedin.com/in/parth-bhat](https://linkedin.com/in/parth-bhat)
+
+---
+
+<div align="center">
+Built with ❤️ using React, FastAPI, and Google Gemini AI
+</div>

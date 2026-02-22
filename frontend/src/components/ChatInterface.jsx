@@ -3,6 +3,8 @@ import { Send, Bot, User } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import api from '../services/api'
+import toast from 'react-hot-toast'
+
 function ChatInterface({ document, messages = [], onUpdateMessages = () => {} }) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -32,6 +34,7 @@ function ChatInterface({ document, messages = [], onUpdateMessages = () => {} })
       onUpdateMessages([...newMessages, aiMessage])
     } catch (error) {
       console.error('Chat error:', error)
+      toast.error('Failed to get AI response. Please try again.')
       const errorMessage = {
         role: 'assistant',
         content: 'Sorry, I encountered an error. Please try again.'
@@ -152,12 +155,19 @@ function ChatInterface({ document, messages = [], onUpdateMessages = () => {} })
           disabled={loading}
         />
         <button
-          onClick={sendMessage}
-          disabled={loading || !input.trim()}
-          className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-600 rounded-lg text-white transition-colors"
-        >
-          <Send size={20} />
-        </button>
+  onClick={sendMessage}
+  disabled={loading || !input.trim()}
+  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 
+    hover:from-purple-700 hover:to-pink-700 
+    hover:shadow-lg hover:shadow-purple-500/50
+    disabled:from-gray-600 disabled:to-gray-600 
+    disabled:cursor-not-allowed
+    rounded-xl text-white transition-all duration-300
+    transform hover:scale-105 active:scale-95"
+>
+  <Send size={20} />
+</button>
+
       </div>
     </div>
   )

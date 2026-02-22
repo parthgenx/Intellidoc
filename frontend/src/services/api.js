@@ -7,16 +7,16 @@ const api = axios.create({
   }
 })
 
-export const uploadDocument = async (file) => {
+export const uploadDocument = async (file, userId) => {
   const formData = new FormData()
   formData.append('file', file)
+  formData.append('user_id', userId)
   
-  const response = await api.post('/api/upload', formData, {
+  return api.post('/api/upload', formData, {
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   })
-  
-  return response.data
 }
+
 export default api

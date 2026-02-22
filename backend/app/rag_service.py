@@ -36,9 +36,11 @@ class RAGService:
         pc = Pinecone(api_key=pinecone_key)
         self.index = pc.Index("intellidoc")
         
-        # Initialize embeddings
+        # Initialize embeddings with 768 dimensions to match Pinecone index
         self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
+            model="models/gemini-embedding-001",
+            task_type="RETRIEVAL_DOCUMENT",
+            output_dimensionality=768,
             google_api_key=gemini_key
         )
         
