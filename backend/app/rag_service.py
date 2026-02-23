@@ -1,4 +1,4 @@
-from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+import google.generativeai as genai
 from pinecone import Pinecone
 from dotenv import load_dotenv
 import os
@@ -11,50 +11,57 @@ class RAGService:
     def __init__(self):
         self._initialized = False
         self.index = None
-        self.embeddings = None
-        self.llm = None
+        self.embed_model = "models/gemini-embedding-001"
+        self.chat_model = None
+        self.gemini_key = None
 
     def _ensure_initialized(self):
         if self._initialized:
             return
 
         pinecone_key = os.getenv("PINECONE_API_KEY")
-        gemini_key = os.getenv("GEMINI_API_KEY")
+        self.gemini_key = os.getenv("GEMINI_API_KEY")
 
         if not pinecone_key:
             raise Exception("PINECONE_API_KEY not found in environment variables!")
-        if not gemini_key:
+        if not self.gemini_key:
             raise Exception("GEMINI_API_KEY not found in environment variables!")
+
+        genai.configure(api_key=self.gemini_key)
 
         pc = Pinecone(api_key=pinecone_key)
         self.index = pc.Index("intellidoc")
 
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-001",
-            task_type="RETRIEVAL_DOCUMENT",
-            output_dimensionality=768,
-            google_api_key=gemini_key
-        )
-
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
-            google_api_key=gemini_key,
-            temperature=0.3
-        )
+        self.chat_model = genai.GenerativeModel("gemini-2.0-flash")
 
         self._initialized = True
 
-    def _embed_texts(self, texts: List[str]) -> List[List[float]]:
-        return self.embeddings.embed_documents(texts)
+    def _embed_text(self, text: str) -> List[float]:
+        result = genai.embed_content(
+            model=self.embed_model,
+            content=text,
+            task_type="retrieval_query",
+            output_dimensionality=768
+        )
+        return result["embedding"]
 
-    def _embed_query(self, text: str) -> List[float]:
-        return self.embeddings.embed_query(text)
+    def _embed_documents(self, texts: List[str]) -> List[List[float]]:
+        embeddings = []
+        for text in texts:
+            result = genai.embed_content(
+                model=self.embed_model,
+                content=text,
+                task_type="retrieval_document",
+                output_dimensionality=768
+            )
+            embeddings.append(result["embedding"])
+        return embeddings
 
     def add_document_to_vector_store(self, chunks: List[Dict], document_id: str):
         self._ensure_initialized()
 
         texts = [chunk['text'] for chunk in chunks]
-        vectors = self._embed_texts(texts)
+        vectors = self._embed_documents(texts)
 
         upsert_data = []
         for i, chunk in enumerate(chunks):
@@ -70,32 +77,20 @@ class RAGService:
 
         self.index.upsert(vectors=upsert_data)
 
-    def _search(self, query: str, document_id: str = None, top_k: int = 3) -> List[Dict]:
-        query_vector = self._embed_query(query)
-
+    def _search(self, query: str, document_id: str = None, top_k: int = 3) -> List:
+        query_vector = self._embed_text(query)
         filter_dict = {"document_id": {"$eq": document_id}} if document_id else None
-
         results = self.index.query(
             vector=query_vector,
             top_k=top_k,
             filter=filter_dict,
             include_metadata=True
         )
-
         return results.matches
 
-    def _invoke_llm(self, prompt: str) -> str:
-        response = self.llm.invoke(prompt)
-        if hasattr(response, 'content'):
-            if isinstance(response.content, str):
-                return response.content
-            elif isinstance(response.content, list):
-                return ''.join([
-                    part.get('text', '') if isinstance(part, dict) else str(part)
-                    for part in response.content
-                ])
-            return str(response.content)
-        return str(response)
+    def _generate(self, prompt: str) -> str:
+        response = self.chat_model.generate_content(prompt)
+        return response.text
 
     def query_documents(self, question: str, document_id: str = None, top_k: int = 3) -> Dict:
         self._ensure_initialized()
@@ -119,13 +114,15 @@ Question: {question}
 Answer: Provide a clear, concise answer based on the context. If the answer is not in the context, say "I don't have enough information to answer that."
 """
 
-        answer_text = self._invoke_llm(prompt)
-        answer_text = answer_text.replace('\\n', '\n').replace('\\"', '"')
+        answer_text = self._generate(prompt)
 
         sources = [
             {
                 "text": m.metadata.get("text", "")[:200] + "...",
-                "metadata": {"document_id": m.metadata.get("document_id"), "chunk_index": m.metadata.get("chunk_index")}
+                "metadata": {
+                    "document_id": m.metadata.get("document_id"),
+                    "chunk_index": m.metadata.get("chunk_index")
+                }
             }
             for m in matches
         ]
@@ -163,10 +160,9 @@ SUMMARY:
 KEY POINTS:
 - [Point 1]
 - [Point 2]
-...
 """
 
-        response = self._invoke_llm(prompt)
+        response = self._generate(prompt)
 
         parts = response.split("KEY POINTS:")
         summary = parts[0].replace("SUMMARY:", "").strip()
@@ -198,15 +194,12 @@ KEY POINTS:
             text = text[:20000] + "..."
 
         prompt = f"""Extract the following information from this document:
-- Dates (any important dates mentioned)
-- Amounts (monetary values, quantities)
-- Names (people, organizations, locations)
-- Other important entities
+- Dates, Amounts, Names, Other important entities
 
 Document:
 {text}
 
-Return the information in this format:
+Return in this format:
 DATES:
 - [Date 1]
 AMOUNTS:
@@ -217,7 +210,7 @@ OTHER:
 - [Entity 1]
 """
 
-        response = self._invoke_llm(prompt)
+        response = self._generate(prompt)
 
         entities = {"dates": [], "amounts": [], "names": [], "other": []}
         current_category = None

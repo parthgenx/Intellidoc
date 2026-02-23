@@ -4,12 +4,9 @@ python-multipart
 python-dotenv
 supabase
 pinecone>=5.0.0
-langchain
-langchain-google-genai
 google-generativeai
 PyPDF2
 pdfplumber
 Pillow
 pytesseract
-pydantic
 httpx
