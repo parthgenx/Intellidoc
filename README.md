@@ -5,14 +5,14 @@
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20DB-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Pinecone](https://img.shields.io/badge/Pinecone-Vector%20DB-000000?style=for-the-badge)](https://www.pinecone.io/)
 [![Google Gemini](https://img.shields.io/badge/Google%20Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
 
 **Upload your PDFs and have an intelligent conversation with them — powered by RAG and Google Gemini AI.**
 
-[📖 API Docs](http://localhost:8000/docs) · [🐛 Report Bug](../../issues) · [💡 Request Feature](../../issues)
+[📖 API Docs](https://intellidoc-ftvs.onrender.com/docs) · [🚀 Live Demo](https://intellidoc-orpin.vercel.app) · [🐛 Report Bug](../../issues)
 
 </div>
 
@@ -53,7 +53,7 @@
 │                                                    │
 │  ┌─────────────┐ ┌──────────────┐ ┌─────────────┐ │
 │  │ RAG Service │ │ Doc Processor│ │ Supabase    │ │
-│  │ (LangChain) │ │ (PyMuPDF)    │ │ Admin Client│ │
+│  │ (GenAI SDK) │ │ (PyPDF2)     │ │ Admin Client│ │
 │  └──────┬──────┘ └──────┬───────┘ └──────┬──────┘ │
 └─────────┼───────────────┼────────────────┼─────────┘
           │               │                │
@@ -73,9 +73,9 @@
 | **FastAPI** | High-performance REST API |
 | **Supabase** | PostgreSQL database, file storage & auth |
 | **Pinecone** | Vector database for semantic search |
-| **Google Gemini 2.0 Flash** | LLM for AI responses & embeddings |
-| **LangChain** | RAG orchestration |
-| **PyMuPDF** | PDF text extraction |
+| **Google Gemini 3 Flash** | LLM for AI responses |
+| **Google GenAI SDK** | Embeddings via `gemini-embedding-001` |
+| **PyPDF2** | PDF text extraction |
 
 ### Frontend
 | Technology | Purpose |
