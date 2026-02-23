@@ -3,10 +3,10 @@ uvicorn[standard]
 python-multipart
 python-dotenv
 supabase
-pinecone-client
+pinecone>=5.0.0
 langchain
 langchain-google-genai
-langchain-pinecone
+langchain-pinecone>=0.2.0
 google-generativeai
 PyPDF2
 pdfplumber
