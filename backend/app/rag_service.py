@@ -93,7 +93,7 @@ class RAGService:
 
     def _generate(self, prompt: str) -> str:
         response = self.client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3-flash-preview",
             contents=prompt
         )
         return response.text
