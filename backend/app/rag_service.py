@@ -1,5 +1,4 @@
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
-from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone
 from dotenv import load_dotenv
 import os
@@ -13,7 +12,6 @@ class RAGService:
         self._initialized = False
         self.index = None
         self.embeddings = None
-        self.vector_store = None
         self.llm = None
 
     def _ensure_initialized(self):
@@ -38,11 +36,6 @@ class RAGService:
             google_api_key=gemini_key
         )
 
-        self.vector_store = PineconeVectorStore(
-            index=self.index,
-            embedding=self.embeddings
-        )
-
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash",
             google_api_key=gemini_key,
@@ -51,45 +44,71 @@ class RAGService:
 
         self._initialized = True
 
+    def _embed_texts(self, texts: List[str]) -> List[List[float]]:
+        return self.embeddings.embed_documents(texts)
+
+    def _embed_query(self, text: str) -> List[float]:
+        return self.embeddings.embed_query(text)
+
     def add_document_to_vector_store(self, chunks: List[Dict], document_id: str):
         self._ensure_initialized()
 
-        texts = []
-        metadatas = []
-        ids = []
+        texts = [chunk['text'] for chunk in chunks]
+        vectors = self._embed_texts(texts)
 
-        for chunk in chunks:
-            texts.append(chunk['text'])
-            metadatas.append({
-                'document_id': document_id,
-                'chunk_index': chunk['chunk_id']
+        upsert_data = []
+        for i, chunk in enumerate(chunks):
+            upsert_data.append({
+                "id": f"{document_id}_{chunk['chunk_id']}",
+                "values": vectors[i],
+                "metadata": {
+                    "document_id": document_id,
+                    "chunk_index": chunk['chunk_id'],
+                    "text": chunk['text']
+                }
             })
-            ids.append(f"{document_id}_{chunk['chunk_id']}")
 
-        self.vector_store.add_texts(
-            texts=texts,
-            metadatas=metadatas,
-            ids=ids
+        self.index.upsert(vectors=upsert_data)
+
+    def _search(self, query: str, document_id: str = None, top_k: int = 3) -> List[Dict]:
+        query_vector = self._embed_query(query)
+
+        filter_dict = {"document_id": {"$eq": document_id}} if document_id else None
+
+        results = self.index.query(
+            vector=query_vector,
+            top_k=top_k,
+            filter=filter_dict,
+            include_metadata=True
         )
+
+        return results.matches
+
+    def _invoke_llm(self, prompt: str) -> str:
+        response = self.llm.invoke(prompt)
+        if hasattr(response, 'content'):
+            if isinstance(response.content, str):
+                return response.content
+            elif isinstance(response.content, list):
+                return ''.join([
+                    part.get('text', '') if isinstance(part, dict) else str(part)
+                    for part in response.content
+                ])
+            return str(response.content)
+        return str(response)
 
     def query_documents(self, question: str, document_id: str = None, top_k: int = 3) -> Dict:
         self._ensure_initialized()
 
-        filter_dict = {"document_id": document_id} if document_id else None
+        matches = self._search(question, document_id, top_k)
 
-        docs = self.vector_store.similarity_search(
-            question,
-            k=top_k,
-            filter=filter_dict
-        )
-
-        if len(docs) == 0:
+        if not matches:
             return {
                 "answer": "I couldn't find any relevant information in this document to answer your question.",
                 "sources": []
             }
 
-        context = "\n\n".join([doc.page_content for doc in docs])
+        context = "\n\n".join([m.metadata.get("text", "") for m in matches])
 
         prompt = f"""You are a helpful AI assistant. Answer the question based on the following context.
 
@@ -100,61 +119,32 @@ Question: {question}
 Answer: Provide a clear, concise answer based on the context. If the answer is not in the context, say "I don't have enough information to answer that."
 """
 
-        response = self.llm.invoke(prompt)
-        if hasattr(response, 'content'):
-            if isinstance(response.content, str):
-                answer_text = response.content
-            elif isinstance(response.content, list):
-                answer_text = ''.join([part.get('text', '') if isinstance(part, dict) else str(part) for part in response.content])
-            else:
-                answer_text = str(response.content)
-        elif isinstance(response, str):
-            answer_text = response
-        else:
-            response_str = str(response)
-            import re
-            text_match = re.search(r'"text"\s*:\s*"([^"]*)"', response_str)
-            answer_text = text_match.group(1) if text_match else response_str
-
+        answer_text = self._invoke_llm(prompt)
         answer_text = answer_text.replace('\\n', '\n').replace('\\"', '"')
 
         sources = [
             {
-                "text": doc.page_content[:200] + "...",
-                "metadata": doc.metadata
+                "text": m.metadata.get("text", "")[:200] + "...",
+                "metadata": {"document_id": m.metadata.get("document_id"), "chunk_index": m.metadata.get("chunk_index")}
             }
-            for doc in docs
+            for m in matches
         ]
 
-        return {
-            "answer": answer_text,
-            "sources": sources
-        }
+        return {"answer": answer_text, "sources": sources}
 
     def summarize_document(self, document_id: str) -> Dict:
         self._ensure_initialized()
 
-        docs = self.vector_store.similarity_search(
-            "summary overview main points key information",
-            k=10,
-            filter={"document_id": document_id}
-        )
+        matches = self._search("summary overview main points key information", document_id, top_k=10)
 
-        if len(docs) == 0:
-            all_docs = self.vector_store.similarity_search("summary overview", k=50)
-            docs = [doc for doc in all_docs if doc.metadata.get('document_id') == document_id][:10]
-
-        if len(docs) == 0:
+        if not matches:
             from app.main import supabase
             db_chunks = supabase.table('document_chunks').select('*').eq('document_id', document_id).limit(10).execute()
-            if len(db_chunks.data) == 0:
-                return {
-                    "summary": "This document has no content available for summarization.",
-                    "key_points": []
-                }
+            if not db_chunks.data:
+                return {"summary": "This document has no content available for summarization.", "key_points": []}
             full_text = "\n\n".join([chunk['content'] for chunk in db_chunks.data])
         else:
-            full_text = "\n\n".join([doc.page_content for doc in docs])
+            full_text = "\n\n".join([m.metadata.get("text", "") for m in matches])
 
         if len(full_text) > 30000:
             full_text = full_text[:30000] + "..."
@@ -176,25 +166,7 @@ KEY POINTS:
 ...
 """
 
-        try:
-            response = self.llm.predict(prompt)
-        except Exception:
-            response = self.llm.invoke(prompt)
-            if hasattr(response, 'content'):
-                if isinstance(response.content, str):
-                    response = response.content
-                elif isinstance(response.content, list):
-                    response = ''.join([
-                        part.get('text', '') if isinstance(part, dict) else str(part)
-                        for part in response.content
-                    ])
-                else:
-                    response = str(response.content)
-            else:
-                response = str(response)
-
-        if not isinstance(response, str):
-            response = str(response)
+        response = self._invoke_llm(prompt)
 
         parts = response.split("KEY POINTS:")
         summary = parts[0].replace("SUMMARY:", "").strip()
@@ -206,32 +178,21 @@ KEY POINTS:
             if line.strip() and (line.strip().startswith('-') or line.strip().startswith('*'))
         ]
 
-        return {
-            "summary": summary,
-            "key_points": key_points
-        }
+        return {"summary": summary, "key_points": key_points}
 
     def extract_entities(self, document_id: str) -> Dict:
         self._ensure_initialized()
 
-        docs = self.vector_store.similarity_search(
-            "important information dates amounts names numbers",
-            k=5,
-            filter={"document_id": document_id}
-        )
+        matches = self._search("important information dates amounts names numbers", document_id, top_k=5)
 
-        if len(docs) == 0:
-            all_docs = self.vector_store.similarity_search("dates amounts names", k=30)
-            docs = [doc for doc in all_docs if doc.metadata.get('document_id') == document_id][:5]
-
-        if len(docs) == 0:
+        if not matches:
             from app.main import supabase
             db_chunks = supabase.table('document_chunks').select('*').eq('document_id', document_id).limit(5).execute()
-            if len(db_chunks.data) == 0:
+            if not db_chunks.data:
                 return {"entities": {"dates": [], "amounts": [], "names": [], "other": []}}
             text = "\n\n".join([chunk['content'] for chunk in db_chunks.data])
         else:
-            text = "\n\n".join([doc.page_content for doc in docs])
+            text = "\n\n".join([m.metadata.get("text", "") for m in matches])
 
         if len(text) > 20000:
             text = text[:20000] + "..."
@@ -256,25 +217,7 @@ OTHER:
 - [Entity 1]
 """
 
-        try:
-            response = self.llm.predict(prompt)
-        except Exception:
-            response = self.llm.invoke(prompt)
-            if hasattr(response, 'content'):
-                if isinstance(response.content, str):
-                    response = response.content
-                elif isinstance(response.content, list):
-                    response = ''.join([
-                        part.get('text', '') if isinstance(part, dict) else str(part)
-                        for part in response.content
-                    ])
-                else:
-                    response = str(response.content)
-            else:
-                response = str(response)
-
-        if not isinstance(response, str):
-            response = str(response)
+        response = self._invoke_llm(prompt)
 
         entities = {"dates": [], "amounts": [], "names": [], "other": []}
         current_category = None
