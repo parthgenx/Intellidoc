@@ -1,4 +1,5 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from pinecone import Pinecone
 from dotenv import load_dotenv
 import os
@@ -12,48 +13,51 @@ class RAGService:
         self._initialized = False
         self.index = None
         self.embed_model = "models/gemini-embedding-001"
-        self.chat_model = None
-        self.gemini_key = None
+        self.client = None
 
     def _ensure_initialized(self):
         if self._initialized:
             return
 
         pinecone_key = os.getenv("PINECONE_API_KEY")
-        self.gemini_key = os.getenv("GEMINI_API_KEY")
+        gemini_key = os.getenv("GEMINI_API_KEY")
 
         if not pinecone_key:
             raise Exception("PINECONE_API_KEY not found in environment variables!")
-        if not self.gemini_key:
+        if not gemini_key:
             raise Exception("GEMINI_API_KEY not found in environment variables!")
 
-        genai.configure(api_key=self.gemini_key)
+        self.client = genai.Client(api_key=gemini_key)
 
         pc = Pinecone(api_key=pinecone_key)
         self.index = pc.Index("intellidoc")
-
-        self.chat_model = genai.GenerativeModel("gemini-3-flash-preview")
 
         self._initialized = True
         print("RAG Service initialized successfully")
 
     def _embed_text(self, text: str) -> List[float]:
-        result = genai.embed_content(
+        response = self.client.models.embed_content(
             model=self.embed_model,
-            content=text,
-            task_type="retrieval_query"
+            contents=text,
+            config=types.EmbedContentConfig(
+                task_type="RETRIEVAL_QUERY",
+                output_dimensionality=768
+            )
         )
-        return result["embedding"]
+        return response.embeddings[0].values
 
     def _embed_documents(self, texts: List[str]) -> List[List[float]]:
         embeddings = []
         for text in texts:
-            result = genai.embed_content(
+            response = self.client.models.embed_content(
                 model=self.embed_model,
-                content=text,
-                task_type="retrieval_document"
+                contents=text,
+                config=types.EmbedContentConfig(
+                    task_type="RETRIEVAL_DOCUMENT",
+                    output_dimensionality=768
+                )
             )
-            embeddings.append(result["embedding"])
+            embeddings.append(response.embeddings[0].values)
         return embeddings
 
     def add_document_to_vector_store(self, chunks: List[Dict], document_id: str):
@@ -88,7 +92,10 @@ class RAGService:
         return results.matches
 
     def _generate(self, prompt: str) -> str:
-        response = self.chat_model.generate_content(prompt)
+        response = self.client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         return response.text
 
     def query_documents(self, question: str, document_id: str = None, top_k: int = 3) -> Dict:
