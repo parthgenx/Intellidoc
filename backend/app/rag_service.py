@@ -32,7 +32,7 @@ class RAGService:
         pc = Pinecone(api_key=pinecone_key)
         self.index = pc.Index("intellidoc")
 
-        self.chat_model = genai.GenerativeModel("gemini-1.5-flash")
+        self.chat_model = genai.GenerativeModel("gemini-3-flash-preview")
 
         self._initialized = True
         print("RAG Service initialized successfully")
