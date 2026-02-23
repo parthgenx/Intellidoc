@@ -32,16 +32,16 @@ class RAGService:
         pc = Pinecone(api_key=pinecone_key)
         self.index = pc.Index("intellidoc")
 
-        self.chat_model = genai.GenerativeModel("gemini-2.0-flash")
+        self.chat_model = genai.GenerativeModel("gemini-1.5-flash")
 
         self._initialized = True
+        print("RAG Service initialized successfully")
 
     def _embed_text(self, text: str) -> List[float]:
         result = genai.embed_content(
             model=self.embed_model,
             content=text,
-            task_type="retrieval_query",
-            output_dimensionality=768
+            task_type="retrieval_query"
         )
         return result["embedding"]
 
@@ -51,8 +51,7 @@ class RAGService:
             result = genai.embed_content(
                 model=self.embed_model,
                 content=text,
-                task_type="retrieval_document",
-                output_dimensionality=768
+                task_type="retrieval_document"
             )
             embeddings.append(result["embedding"])
         return embeddings
