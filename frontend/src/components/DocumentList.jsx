@@ -5,7 +5,6 @@ import LoadingSpinner from './LoadingSpinner'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
 
-
 function DocumentList({ onSelectDocument }) {
   const { user } = useAuth()
   const [documents, setDocuments] = useState([])
@@ -22,40 +21,31 @@ function DocumentList({ onSelectDocument }) {
       const response = await api.get(`/api/documents?user_id=${user.id}`)
       setDocuments(response.data.documents)
     } catch (error) {
-      console.error('Error fetching documents:', error)
       toast.error('Failed to load documents')
     } finally {
       setLoading(false)
     }
   }
 
-
   const deleteDocument = async (id) => {
     if (!confirm('Delete this document?')) return
-
     try {
       await api.delete(`/api/documents/${id}`)
       setDocuments(documents.filter(doc => doc.id !== id))
       toast.success('Document deleted successfully!')
     } catch (error) {
-      console.error('Error deleting:', error)
       toast.error('Failed to delete document')
     }
   }
 
-
-  // Filter documents based on search
   const filteredDocuments = documents.filter(doc =>
     doc.filename.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   return (
     <div className="glass p-6 fade-in">
-      <h2 className="text-2xl font-bold text-white mb-6">
-        Your Documents
-      </h2>
+      <h2 className="text-2xl font-bold text-white mb-6">Your Documents</h2>
 
-      {/* Search Bar */}
       {documents.length > 0 && !loading && (
         <div className="mb-4 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -69,7 +59,6 @@ function DocumentList({ onSelectDocument }) {
         </div>
       )}
 
-      {/* Loading Skeleton */}
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
@@ -90,10 +79,7 @@ function DocumentList({ onSelectDocument }) {
       ) : (
         <div className="space-y-3">
           {filteredDocuments.map((doc) => (
-            <div
-              key={doc.id}
-              className="glass-hover p-5 flex items-center justify-between group"
-            >
+            <div key={doc.id} className="glass-hover p-5 flex items-center justify-between group">
               <div className="flex items-center gap-3 flex-1">
                 <File className="text-purple-400" size={24} />
                 <div className="flex-1">
@@ -103,7 +89,6 @@ function DocumentList({ onSelectDocument }) {
                   </p>
                 </div>
               </div>
-
               <div className="flex gap-2">
                 <button
                   onClick={() => onSelectDocument(doc)}
@@ -112,8 +97,6 @@ function DocumentList({ onSelectDocument }) {
                 >
                   <Eye className="text-purple-400 group-hover:text-purple-300 transition-colors" size={20} />
                 </button>
-
-
                 <button
                   onClick={() => deleteDocument(doc.id)}
                   className="p-2 hover:bg-red-500/20 rounded-lg transition-all hover:scale-110"
@@ -121,7 +104,6 @@ function DocumentList({ onSelectDocument }) {
                 >
                   <Trash2 className="text-red-400 hover:text-red-300 transition-colors" size={20} />
                 </button>
-
               </div>
             </div>
           ))}

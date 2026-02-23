@@ -19,10 +19,7 @@ function Dashboard() {
   const handleSelectDocument = (doc) => {
     setSelectedDocument(doc)
     if (!chatHistory[doc.id]) {
-      setChatHistory(prev => ({
-        ...prev,
-        [doc.id]: []
-      }))
+      setChatHistory(prev => ({ ...prev, [doc.id]: [] }))
     }
   }
 
@@ -31,10 +28,7 @@ function Dashboard() {
   }
 
   const updateChatHistory = (documentId, messages) => {
-    setChatHistory(prev => ({
-      ...prev,
-      [documentId]: messages
-    }))
+    setChatHistory(prev => ({ ...prev, [documentId]: messages }))
   }
 
   const handleSignOut = async () => {
@@ -48,16 +42,11 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-      {/* Header */}
       <header className="glass m-4 p-8 fade-in">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-5xl font-bold gradient-text mb-2">
-              IntelliDoc
-            </h1>
-            <p className="text-gray-400 text-lg">
-              AI-Powered Document Intelligence Platform
-            </p>
+            <h1 className="text-5xl font-bold gradient-text mb-2">IntelliDoc</h1>
+            <p className="text-gray-400 text-lg">AI-Powered Document Intelligence Platform</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
@@ -75,16 +64,11 @@ function Dashboard() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="p-4 grid md:grid-cols-2 gap-4">
         <FileUpload onUploadSuccess={handleUploadSuccess} />
-        <DocumentList
-          key={refreshKey}
-          onSelectDocument={handleSelectDocument}
-        />
+        <DocumentList key={refreshKey} onSelectDocument={handleSelectDocument} />
       </main>
 
-      {/* Document Viewer Modal */}
       {selectedDocument && (
         <DocumentViewer
           document={selectedDocument}
