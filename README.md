@@ -18,12 +18,6 @@
 
 ---
 
-## 📸 Screenshots
-
-> *Coming soon — deploy and add screenshots here!*
-
----
-
 ## 🌟 Features
 
 | Feature | Description |
