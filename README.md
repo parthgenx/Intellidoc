@@ -248,7 +248,7 @@ Distributed under the MIT License.
 
 **Parth Bhat**
 - GitHub: [@parthbhat](https://github.com/parthgenx)
-- LinkedIn: https://www.linkedin.com/in/parth-bhat-574095224/
+- LinkedIn: https://www.linkedin.com/in/parthbhat/
 
 ---
 
