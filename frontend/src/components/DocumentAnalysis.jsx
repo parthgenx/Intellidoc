@@ -37,22 +37,20 @@ function DocumentAnalysis({ document }) {
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setActiveTab('summary')}
-          className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-            activeTab === 'summary'
+          className={`px-4 py-2 rounded-lg flex items-center gap-2 ${activeTab === 'summary'
               ? 'bg-purple-600 text-white'
               : 'bg-gray-800 text-gray-400 hover:text-white'
-          }`}
+            }`}
         >
           <FileText size={18} />
           Summary
         </button>
         <button
           onClick={() => setActiveTab('entities')}
-          className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-            activeTab === 'entities'
+          className={`px-4 py-2 rounded-lg flex items-center gap-2 ${activeTab === 'entities'
               ? 'bg-purple-600 text-white'
               : 'bg-gray-800 text-gray-400 hover:text-white'
-          }`}
+            }`}
         >
           <Tag size={18} />
           Entities
@@ -153,7 +151,7 @@ function DocumentAnalysis({ document }) {
                 )}
                 {entities.entities.amounts && entities.entities.amounts.length > 0 && (
                   <div className="glass p-4">
-                    <h3 className="text-sm font-semibold text-purple-400 mb-2">💰 Amounts</h3>
+                    <h3 className="text-sm font-semibold text-purple-400 mb-2">🔢 Amounts</h3>
                     <div className="flex flex-wrap gap-2">
                       {entities.entities.amounts.map((amount, idx) => (
                         <span key={idx} className="px-3 py-1 bg-green-600/20 text-green-300 rounded-full text-sm">
