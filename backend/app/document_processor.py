@@ -1,9 +1,8 @@
 import PyPDF2
 import pdfplumber
-from PIL import Image
 import pytesseract
-import os
 from typing import List, Dict
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 class DocumentProcessor:
@@ -52,22 +51,31 @@ class DocumentProcessor:
             return ""
 
     def chunk_text(self, text: str, chunk_size: int = 1000, overlap: int = 200) -> List[Dict]:
-        chunks = []
-        start = 0
-        chunk_id = 0
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=overlap,
+            separators=["\n\n", "\n", " ", ""],
+        )
 
-        while start < len(text):
-            end = start + chunk_size
-            chunk_content = text[start:end]
+        chunks = []
+        cursor = 0
+
+        for chunk_id, chunk_content in enumerate(splitter.split_text(text)):
+            search_start = max(0, cursor - overlap)
+            start_pos = text.find(chunk_content, search_start)
+            if start_pos == -1:
+                start_pos = search_start
+
+            end_pos = start_pos + len(chunk_content)
+            cursor = end_pos
+
             chunks.append({
                 "chunk_id": chunk_id,
                 "text": chunk_content,
-                "start_pos": start,
-                "end_pos": end,
+                "start_pos": start_pos,
+                "end_pos": end_pos,
                 "length": len(chunk_content)
             })
-            start = end - overlap
-            chunk_id += 1
 
         return chunks
 

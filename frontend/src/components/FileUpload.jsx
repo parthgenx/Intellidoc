@@ -12,6 +12,7 @@ function FileUpload({ onUploadSuccess }) {
   const [uploading, setUploading] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const uploadHighlights = ['PDF only', 'OCR ready', 'Private to your workspace']
 
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0]
@@ -59,66 +60,103 @@ function FileUpload({ onUploadSuccess }) {
   }
 
   return (
-    <div className="glass p-8 fade-in">
-      <h2 className="text-2xl font-bold text-white mb-6">Upload Document</h2>
+    <section className="glass p-6 fade-in sm:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="eyebrow mb-3">Ingest PDFs</p>
+          <h2 className="text-2xl text-[color:var(--color-text-primary)] sm:text-3xl">Upload a document</h2>
+          <p className="mt-2 max-w-lg text-sm leading-6 text-[color:var(--color-text-muted)] sm:text-base">
+            Drop a PDF and IntelliDoc will extract the text, prepare chunks for retrieval, and make
+            the document ready for grounded chat and analysis.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {uploadHighlights.map((item) => (
+            <span key={item} className="metric-chip">
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
 
       {uploading ? (
-        <div className="border-2 border-dashed border-purple-500 rounded-lg p-12 text-center">
+        <div className="mt-8 rounded-[26px] border border-[color:var(--color-border)] bg-[rgba(255,255,255,0.62)] p-8 text-center shadow-[var(--shadow-soft)] sm:p-10">
           <LoadingSpinner size="lg" message="Uploading and processing document..." />
-          <div className="mt-6 w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+          <div className="mt-8 h-3 w-full overflow-hidden rounded-full bg-[rgba(70,58,44,0.08)]">
             <div
-              className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500 ease-out"
+              className="h-3 rounded-full bg-[linear-gradient(135deg,var(--color-accent),#ef8a62)] transition-all duration-500 ease-out"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>
-          <p className="text-sm text-gray-400 mt-2 font-medium">{uploadProgress}%</p>
+          <p className="mt-3 text-sm font-semibold text-[color:var(--color-text-secondary)]">
+            {uploadProgress}% complete
+          </p>
         </div>
       ) : (
         <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-all duration-200 ${isDragActive ? 'border-purple-500 bg-purple-500/10' : 'border-gray-600 hover:border-purple-400'
-            }`}
+          {...getRootProps({ 'aria-label': 'Upload PDF document' })}
+          className={`mt-8 cursor-pointer rounded-[28px] border-2 border-dashed p-8 transition-all duration-200 sm:p-10 ${
+            isDragActive
+              ? 'border-[color:var(--color-teal)] bg-[color:var(--color-teal-soft)]'
+              : 'border-[rgba(70,58,44,0.18)] bg-[rgba(255,255,255,0.46)] hover:border-[color:var(--color-accent)] hover:bg-[rgba(255,255,255,0.68)]'
+          }`}
         >
-          <input {...getInputProps()} />
-          <Upload className="mx-auto mb-4 text-gray-400" size={48} />
-          {isDragActive ? (
-            <p className="text-purple-400 text-lg">Drop the PDF here...</p>
-          ) : (
-            <div>
-              <p className="text-gray-300 text-lg mb-2">Drag & drop a PDF here</p>
-              <p className="text-gray-500 text-sm">or click to select a file</p>
+          <input {...getInputProps({ 'aria-label': 'Choose PDF file' })} />
+          <div className="flex flex-col gap-5 text-left sm:flex-row sm:items-center">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-[24px] bg-[color:var(--color-accent-soft)] text-[color:var(--color-accent-strong)] shadow-[var(--shadow-soft)]">
+              <Upload size={30} />
             </div>
-          )}
+
+            <div className="flex-1">
+              <p className="text-lg font-semibold text-[color:var(--color-text-primary)] sm:text-xl">
+                {isDragActive ? 'Drop the PDF here' : 'Drag and drop a PDF here'}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[color:var(--color-text-muted)] sm:text-base">
+                Or click to browse from your device. Larger scanned files are supported through the
+                OCR fallback in the backend.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
       {selectedFile && !uploadSuccess && (
-        <div className="mt-6 glass p-4 flex items-center justify-between">
+        <div className="mt-6 flex flex-col gap-4 rounded-[24px] border border-[color:var(--color-border)] bg-[rgba(255,255,255,0.74)] p-4 shadow-[var(--shadow-soft)] sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <File className="text-purple-400" size={24} />
+            <div className="rounded-2xl bg-[color:var(--color-teal-soft)] p-3 text-[color:var(--color-teal-strong)]">
+              <File size={22} />
+            </div>
             <div>
-              <p className="text-white font-medium">{selectedFile.name}</p>
-              <p className="text-gray-400 text-sm">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+              <p className="font-semibold text-[color:var(--color-text-primary)]">{selectedFile.name}</p>
+              <p className="text-sm text-[color:var(--color-text-muted)]">
+                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
             </div>
           </div>
-          <button onClick={() => setSelectedFile(null)} className="text-gray-400 hover:text-white">
+          <button
+            type="button"
+            onClick={() => setSelectedFile(null)}
+            className="icon-button self-end sm:self-auto"
+            aria-label="Remove selected file"
+          >
             <X size={20} />
           </button>
         </div>
       )}
 
       {uploadSuccess && (
-        <div className="mt-6 glass p-4 flex items-center gap-3 bg-green-500/10 border-green-500/30">
-          <CheckCircle className="text-green-400" size={24} />
-          <p className="text-green-400 font-medium">File uploaded and processed successfully!</p>
+        <div className="mt-6 flex items-center gap-3 rounded-[22px] border border-emerald-200 bg-emerald-50/80 p-4 text-emerald-700 shadow-[var(--shadow-soft)]">
+          <CheckCircle size={22} />
+          <p className="font-semibold">File uploaded and processed successfully.</p>
         </div>
       )}
 
       {selectedFile && !uploadSuccess && (
         <button
           onClick={handleUpload}
+          type="button"
           disabled={uploading}
-          className="mt-6 w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/50 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+          className="primary-button mt-6 w-full justify-center"
         >
           {uploading ? (
             <span className="flex items-center justify-center gap-2">
@@ -128,10 +166,10 @@ function FileUpload({ onUploadSuccess }) {
               </svg>
               Uploading & Processing...
             </span>
-          ) : 'Upload Document'}
+          ) : 'Upload document'}
         </button>
       )}
-    </div>
+    </section>
   )
 }
 

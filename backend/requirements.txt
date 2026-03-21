@@ -3,8 +3,11 @@ uvicorn[standard]
 python-multipart
 python-dotenv
 supabase
+langchain
+langchain-anthropic
+langchain-pinecone
+langchain-text-splitters
 pinecone>=5.0.0
-google-genai
 PyPDF2
 pdfplumber
 Pillow

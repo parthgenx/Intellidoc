@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { LogIn } from 'lucide-react'
+import { FileText, LogIn, MessageSquareText, ShieldCheck } from 'lucide-react'
 
 function Login() {
   const [email, setEmail] = useState('')
@@ -10,6 +10,23 @@ function Login() {
   const [loading, setLoading] = useState(false)
   const { signIn } = useAuth()
   const navigate = useNavigate()
+  const highlights = [
+    {
+      icon: FileText,
+      title: 'Readable uploads',
+      description: 'Turn dense PDFs into a clean, searchable workspace.',
+    },
+    {
+      icon: MessageSquareText,
+      title: 'Grounded chat',
+      description: 'Ask focused questions with answers based on retrieved context.',
+    },
+    {
+      icon: ShieldCheck,
+      title: 'Private by default',
+      description: 'Each signed-in account only sees its own document library.',
+    },
+  ]
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -27,60 +44,111 @@ function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center p-4">
-      <div className="glass p-8 w-full max-w-md fade-in">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold gradient-text mb-2">IntelliDoc</h1>
-          <p className="text-gray-400">Sign in to your account</p>
-        </div>
+    <main className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-[calc(100vh-3rem)] max-w-6xl gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <section className="glass relative overflow-hidden p-6 fade-in sm:p-8 lg:p-12">
+          <div className="absolute -right-10 top-0 h-40 w-40 rounded-full bg-[color:var(--color-accent-soft)] blur-3xl" />
+          <div className="absolute -bottom-16 left-10 h-48 w-48 rounded-full bg-[color:var(--color-teal-soft)] blur-3xl" />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-              placeholder="you@example.com"
-            />
+          <div className="relative flex h-full flex-col justify-between gap-10">
+            <div>
+              <p className="eyebrow mb-4">Document intelligence</p>
+              <div className="mb-5">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--color-text-muted)]">
+                  IntelliDoc
+                </p>
+                <h1 className="mt-2 text-5xl leading-none sm:text-6xl lg:text-7xl">
+                  <span className="gradient-text">IntelliDoc</span>
+                </h1>
+              </div>
+              <h2 className="max-w-3xl text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
+                Read, question, and extract meaning from every PDF.
+              </h2>
+              <p className="mt-5 max-w-2xl text-base leading-7 text-[color:var(--color-text-muted)] sm:text-lg">
+                IntelliDoc turns long-form documents into a calmer workspace for review, grounded chat,
+                and quick analysis without losing sight of the source.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <span className="metric-chip">Fast uploads</span>
+                <span className="metric-chip">Grounded answers</span>
+                <span className="metric-chip">Mobile friendly viewer</span>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {highlights.map(({ icon: Icon, title, description }) => (
+                <article key={title} className="glass-hover p-4">
+                  <div className="mb-4 inline-flex rounded-2xl bg-[color:var(--color-accent-soft)] p-3 text-[color:var(--color-accent-strong)]">
+                    <Icon size={20} />
+                  </div>
+                  <h2 className="text-lg text-[color:var(--color-text-primary)]">{title}</h2>
+                  <p className="mt-2 text-sm leading-6 text-[color:var(--color-text-muted)]">{description}</p>
+                </article>
+              ))}
+            </div>
           </div>
+        </section>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-              placeholder="••••••••"
-            />
+        <section className="glass flex items-center p-6 fade-in sm:p-8 lg:p-10">
+          <div className="w-full">
+            <p className="eyebrow mb-3">Welcome back</p>
+            <h2 className="text-3xl sm:text-4xl">Sign in to IntelliDoc</h2>
+            <p className="mt-3 text-sm leading-7 text-[color:var(--color-text-muted)] sm:text-base">
+              Continue where you left off and keep your document library in one place.
+            </p>
+
+            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-[color:var(--color-text-secondary)]" htmlFor="login-email">
+                  Email
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="input-field mt-2"
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[color:var(--color-text-secondary)]" htmlFor="login-password">
+                  Password
+                </label>
+                <input
+                  id="login-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="input-field mt-2"
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <button type="submit" disabled={loading} className="primary-button w-full">
+                <LogIn size={18} />
+                {loading ? 'Signing in...' : 'Sign in'}
+              </button>
+            </form>
+
+            <p className="mt-6 text-sm text-[color:var(--color-text-muted)]">
+              Do not have an account?{' '}
+              <Link
+                to="/signup"
+                className="font-semibold text-[color:var(--color-accent-strong)] transition hover:text-[color:var(--color-teal-strong)]"
+              >
+                Create one
+              </Link>
+            </p>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/50 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-          >
-            <LogIn size={20} />
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-
-        <p className="text-center text-gray-400 mt-6">
-          Don't have an account?{' '}
-          <a href="/signup" className="text-purple-400 hover:text-purple-300 font-semibold">
-            Sign up
-          </a>
-        </p>
+        </section>
       </div>
-    </div>
+    </main>
   )
 }
 

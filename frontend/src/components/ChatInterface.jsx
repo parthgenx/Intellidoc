@@ -44,115 +44,135 @@ function ChatInterface({ document, messages = [], onUpdateMessages = () => { } }
     }
   }
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    sendMessage()
   }
 
   return (
-    <div className="flex flex-col h-[600px]">
-      <h2 className="text-2xl font-bold text-white mb-4">Chat with {document.filename}</h2>
-
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-        {messages.length === 0 ? (
-          <div className="text-center text-gray-400 mt-8">
-            <Bot size={48} className="mx-auto mb-4 opacity-50" />
-            <p>Ask me anything about this document!</p>
-          </div>
-        ) : (
-          messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {msg.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
-                  <Bot size={20} className="text-white" />
-                </div>
-              )}
-              <div className={`max-w-[70%] ${msg.role === 'user' ? 'order-first' : ''}`}>
-                <div className={`p-4 rounded-lg ${msg.role === 'user' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-100'}`}>
-                  {msg.role === 'assistant' ? (
-                    <div className="markdown-content">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          p: ({ node, ...props }) => <p style={{ marginBottom: '0.5rem' }} {...props} />,
-                          ul: ({ node, ...props }) => <ul style={{ listStyleType: 'disc', listStylePosition: 'inside', marginBottom: '0.5rem', marginLeft: '0.5rem' }} {...props} />,
-                          ol: ({ node, ...props }) => <ol style={{ listStyleType: 'decimal', listStylePosition: 'inside', marginBottom: '0.5rem', marginLeft: '0.5rem' }} {...props} />,
-                          li: ({ node, ...props }) => <li style={{ marginLeft: '0.5rem', marginBottom: '0.25rem' }} {...props} />,
-                          strong: ({ node, ...props }) => <strong style={{ fontWeight: 'bold', color: '#c084fc' }} {...props} />,
-                          em: ({ node, ...props }) => <em style={{ fontStyle: 'italic' }} {...props} />,
-                          code: ({ node, ...props }) => <code style={{ backgroundColor: '#1f2937', padding: '0.125rem 0.25rem', borderRadius: '0.25rem', fontSize: '0.875rem' }} {...props} />,
-                          table: ({ node, ...props }) => (
-                            <div style={{ overflowX: 'auto', marginBottom: '1rem' }}>
-                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }} {...props} />
-                            </div>
-                          ),
-                          thead: ({ node, ...props }) => <thead style={{ backgroundColor: '#374151' }} {...props} />,
-                          tbody: ({ node, ...props }) => <tbody {...props} />,
-                          tr: ({ node, ...props }) => <tr style={{ borderBottom: '1px solid #4b5563' }} {...props} />,
-                          th: ({ node, ...props }) => <th style={{ padding: '0.5rem', textAlign: 'left', fontWeight: 'bold', color: '#c084fc' }} {...props} />,
-                          td: ({ node, ...props }) => <td style={{ padding: '0.5rem' }} {...props} />,
-                        }}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                  )}
-                </div>
-                {msg.sources && msg.sources.length > 0 && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    📚 {msg.sources.length} source{msg.sources.length > 1 ? 's' : ''} used
-                  </div>
-                )}
-              </div>
-              {msg.role === 'user' && (
-                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
-                  <User size={20} className="text-white" />
-                </div>
-              )}
-            </div>
-          ))
-        )}
-        {loading && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
-              <Bot size={20} className="text-white" />
-            </div>
-            <div className="bg-gray-800 p-4 rounded-lg">
-              <div className="flex gap-1">
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              </div>
-            </div>
-          </div>
-        )}
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-4">
+        <p className="eyebrow mb-3">Grounded chat</p>
+        <h2 className="text-2xl text-[color:var(--color-text-primary)] sm:text-3xl">
+          Chat with {document.filename}
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[color:var(--color-text-muted)] sm:text-base">
+          Answers stay anchored to the retrieved passages from this document.
+        </p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex-1 overflow-hidden rounded-[26px] border border-[color:var(--color-border)] bg-[rgba(255,255,255,0.42)] p-4 sm:p-5">
+        <div className="h-full overflow-y-auto pr-1" role="log" aria-live="polite">
+          {messages.length === 0 ? (
+            <div className="empty-state mt-6 px-6 py-10 text-center">
+              <div className="mx-auto mb-5 inline-flex rounded-[24px] bg-[color:var(--color-teal-soft)] p-4 text-[color:var(--color-teal-strong)]">
+                <Bot size={28} />
+              </div>
+              <p className="text-lg font-semibold text-[color:var(--color-text-primary)]">
+                Ask anything about this document
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[color:var(--color-text-muted)]">
+                Try a question about the summary, key dates, obligations, or the main findings in
+                the PDF.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  {msg.role === 'assistant' && (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-teal)] text-white shadow-[0_10px_20px_rgba(42,157,143,0.2)]">
+                      <Bot size={18} />
+                    </div>
+                  )}
+                  <div className={`max-w-[86%] sm:max-w-[72%] ${msg.role === 'user' ? 'order-first' : ''}`}>
+                    <div
+                      className={`rounded-[24px] border px-4 py-3.5 shadow-sm ${
+                        msg.role === 'user'
+                          ? 'border-[rgba(231,111,81,0.16)] bg-[linear-gradient(135deg,#e76f51,#f19c67)] text-white'
+                          : 'border-[color:var(--color-border)] bg-[rgba(255,255,255,0.92)] text-[color:var(--color-text-primary)]'
+                      }`}
+                    >
+                      {msg.role === 'assistant' ? (
+                        <div className="markdown-content">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              table: ({ node, ...props }) => (
+                                <div className="overflow-x-auto">
+                                  <table {...props} />
+                                </div>
+                              ),
+                            }}
+                          >
+                            {msg.content}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="whitespace-pre-wrap leading-7">{msg.content}</p>
+                      )}
+                    </div>
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="mt-2 text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-text-muted)]">
+                        {msg.sources.length} source{msg.sources.length > 1 ? 's' : ''} referenced
+                      </div>
+                    )}
+                  </div>
+                  {msg.role === 'user' && (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(31,41,51,0.9)] text-white shadow-[0_10px_20px_rgba(31,41,51,0.18)]">
+                      <User size={18} />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {loading && (
+                <div className="flex gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-teal)] text-white shadow-[0_10px_20px_rgba(42,157,143,0.2)]">
+                    <Bot size={18} />
+                  </div>
+                  <div className="rounded-[22px] border border-[color:var(--color-border)] bg-[rgba(255,255,255,0.92)] p-4">
+                    <div className="flex gap-1">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-[color:var(--color-text-muted)]" />
+                      <div
+                        className="h-2 w-2 animate-bounce rounded-full bg-[color:var(--color-text-muted)]"
+                        style={{ animationDelay: '0.1s' }}
+                      />
+                      <div
+                        className="h-2 w-2 animate-bounce rounded-full bg-[color:var(--color-text-muted)]"
+                        style={{ animationDelay: '0.2s' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3 sm:flex-row">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
           placeholder="Ask a question..."
-          className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+          className="input-field flex-1"
           disabled={loading}
+          aria-label="Ask a question about this document"
         />
         <button
-          onClick={sendMessage}
+          type="submit"
           disabled={loading || !input.trim()}
-          className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/50 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-xl text-white transition-all duration-300 transform hover:scale-105 active:scale-95"
+          className="primary-button sm:px-6"
+          aria-label="Send question"
         >
           <Send size={20} />
+          <span>Send</span>
         </button>
-      </div>
+      </form>
     </div>
   )
 }

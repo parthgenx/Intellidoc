@@ -12,8 +12,10 @@ function DocumentList({ onSelectDocument }) {
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    fetchDocuments()
-  }, [])
+    if (user?.id) {
+      fetchDocuments()
+    }
+  }, [user?.id])
 
   const fetchDocuments = async () => {
     setLoading(true)
@@ -42,74 +44,101 @@ function DocumentList({ onSelectDocument }) {
     doc.filename.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const formatFileSize = (size = 0) => `${(size / 1024 / 1024).toFixed(2)} MB`
+
   return (
-    <div className="glass p-6 fade-in">
-      <h2 className="text-2xl font-bold text-white mb-6">Your Documents</h2>
+    <section className="glass p-6 fade-in sm:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="eyebrow mb-3">Library</p>
+          <h2 className="text-2xl text-[color:var(--color-text-primary)] sm:text-3xl">Your documents</h2>
+          <p className="mt-2 text-sm leading-6 text-[color:var(--color-text-muted)] sm:text-base">
+            Open any file to read the source, chat with it, or generate a concise analysis.
+          </p>
+        </div>
+        <div className="metric-chip self-start sm:self-auto">
+          {documents.length} {documents.length === 1 ? 'document' : 'documents'}
+        </div>
+      </div>
 
       {documents.length > 0 && !loading && (
-        <div className="mb-4 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+        <div className="relative mt-8">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--color-text-muted)]" size={18} />
           <input
             type="text"
             placeholder="Search documents..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+            className="input-field pl-11"
+            aria-label="Search documents"
           />
         </div>
       )}
 
       {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-gray-700/50 rounded-lg p-4 animate-pulse">
-              <div className="h-5 bg-gray-600 rounded w-3/4 mb-3"></div>
-              <div className="h-3 bg-gray-600 rounded w-1/2 mb-2"></div>
-              <div className="h-3 bg-gray-600 rounded w-1/3"></div>
-            </div>
-          ))}
+        <div className="mt-8 flex min-h-[16rem] items-center justify-center rounded-[26px] border border-[color:var(--color-border)] bg-[rgba(255,255,255,0.5)]">
+          <LoadingSpinner size="lg" message="Loading your document library..." />
         </div>
       ) : filteredDocuments.length === 0 ? (
-        <div className="text-center py-8">
-          <File className="mx-auto mb-4 text-gray-500" size={48} />
-          <p className="text-gray-400">
-            {searchQuery ? 'No documents match your search' : 'No documents yet. Upload one to get started!'}
+        <div className="empty-state mt-8 px-6 py-12 text-center">
+          <div className="mx-auto mb-5 inline-flex rounded-[26px] bg-[color:var(--color-accent-soft)] p-4 text-[color:var(--color-accent-strong)]">
+            <File size={34} />
+          </div>
+          <p className="text-lg font-semibold text-[color:var(--color-text-primary)]">
+            {searchQuery ? 'No documents match your search' : 'No documents yet'}
+          </p>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[color:var(--color-text-muted)]">
+            {searchQuery
+              ? 'Try a different filename or clear the search field.'
+              : 'Upload your first PDF to start reading, chatting, and summarizing inside the viewer.'}
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="mt-8 space-y-4">
           {filteredDocuments.map((doc) => (
-            <div key={doc.id} className="glass-hover p-5 flex items-center justify-between group">
-              <div className="flex items-center gap-3 flex-1">
-                <File className="text-purple-400" size={24} />
-                <div className="flex-1">
-                  <p className="text-white font-medium">{doc.filename}</p>
-                  <p className="text-gray-400 text-sm">
-                    {(doc.file_size / 1024 / 1024).toFixed(2)} MB • {doc.status}
-                  </p>
+            <article key={doc.id} className="glass-hover p-4 sm:p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-start gap-4">
+                  <div className="rounded-[22px] bg-[color:var(--color-accent-soft)] p-3 text-[color:var(--color-accent-strong)]">
+                    <File size={22} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-semibold text-[color:var(--color-text-primary)] sm:text-lg">
+                      {doc.filename}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-[color:var(--color-text-muted)]">
+                      <span className="status-pill">{doc.status}</span>
+                      <span>{formatFileSize(doc.file_size)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 self-end sm:self-auto">
+                  <button
+                    onClick={() => onSelectDocument(doc)}
+                    className="icon-button"
+                    title="Open document"
+                    aria-label={`Open ${doc.filename}`}
+                    type="button"
+                  >
+                    <Eye size={19} />
+                  </button>
+                  <button
+                    onClick={() => deleteDocument(doc.id)}
+                    className="icon-button icon-button-danger"
+                    title="Delete document"
+                    aria-label={`Delete ${doc.filename}`}
+                    type="button"
+                  >
+                    <Trash2 size={19} />
+                  </button>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onSelectDocument(doc)}
-                  className="p-2 hover:bg-purple-500/20 rounded-lg transition-all hover:scale-110"
-                  title="View document"
-                >
-                  <Eye className="text-purple-400 group-hover:text-purple-300 transition-colors" size={20} />
-                </button>
-                <button
-                  onClick={() => deleteDocument(doc.id)}
-                  className="p-2 hover:bg-red-500/20 rounded-lg transition-all hover:scale-110"
-                  title="Delete document"
-                >
-                  <Trash2 className="text-red-400 hover:text-red-300 transition-colors" size={20} />
-                </button>
-              </div>
-            </div>
+            </article>
           ))}
         </div>
       )}
-    </div>
+    </section>
   )
 }
 
