@@ -17,6 +17,19 @@ function DocumentList({ onSelectDocument }) {
     }
   }, [user?.id])
 
+  useEffect(() => {
+    if (!user?.id) return
+
+    const hasProcessingDocuments = documents.some((doc) => doc.status === 'processing')
+    if (!hasProcessingDocuments) return
+
+    const intervalId = window.setInterval(() => {
+      fetchDocuments()
+    }, 5000)
+
+    return () => window.clearInterval(intervalId)
+  }, [documents, user?.id])
+
   const fetchDocuments = async () => {
     setLoading(true)
     try {

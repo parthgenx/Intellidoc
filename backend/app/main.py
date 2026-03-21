@@ -1,9 +1,10 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from supabase import create_client
 from app.rag_service import rag_service
 import os
+import tempfile
 import uuid
 from dotenv import load_dotenv
 from app.document_processor import document_processor
@@ -48,6 +49,46 @@ def health_check():
     return {"status": "ok"}
 
 
+def _update_document_status(document_id: str, status: str):
+    supabase_admin.table('documents').update({
+        "status": status
+    }).eq('id', document_id).execute()
+
+
+def _store_document_chunks(document_id: str, chunks, batch_size: int = 100):
+    rows = [
+        {
+            "document_id": document_id,
+            "content": chunk['text'],
+            "chunk_index": chunk['chunk_id']
+        }
+        for chunk in chunks
+    ]
+
+    for start in range(0, len(rows), batch_size):
+        supabase_admin.table('document_chunks').insert(rows[start:start + batch_size]).execute()
+
+
+def _process_uploaded_document(document_id: str, temp_file_path: str):
+    try:
+        extracted_text = document_processor.extract_text_from_pdf(temp_file_path)
+        chunks = document_processor.chunk_text(extracted_text)
+
+        if not chunks:
+            raise ValueError("No extractable text was found in this PDF.")
+
+        _store_document_chunks(document_id, chunks)
+        rag_service.add_document_to_vector_store(chunks, document_id)
+        _update_document_status(document_id, "ready")
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        _update_document_status(document_id, "failed")
+    finally:
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
+
 @app.post("/api/chat")
 async def chat_with_document(request: ChatRequest):
     try:
@@ -63,7 +104,11 @@ async def chat_with_document(request: ChatRequest):
 
 
 @app.post("/api/upload")
-async def upload_document(file: UploadFile = File(...), user_id: str = Form(...)):
+async def upload_document(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    user_id: str = Form(...)
+):
     temp_file_path = None
     try:
         file_id = str(uuid.uuid4())
@@ -72,9 +117,9 @@ async def upload_document(file: UploadFile = File(...), user_id: str = Form(...)
 
         content = await file.read()
 
-        temp_file_path = f"temp_{unique_filename}"
-        with open(temp_file_path, 'wb') as f:
-            f.write(content)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as temp_file:
+            temp_file.write(content)
+            temp_file_path = temp_file.name
 
         supabase_admin.storage.from_('documents').upload(
             unique_filename,
@@ -83,9 +128,6 @@ async def upload_document(file: UploadFile = File(...), user_id: str = Form(...)
         )
 
         file_url = supabase_admin.storage.from_('documents').get_public_url(unique_filename)
-
-        extracted_text = document_processor.extract_text_from_pdf(temp_file_path)
-        chunks = document_processor.chunk_text(extracted_text)
 
         db_response = supabase_admin.table('documents').insert({
             "filename": file.filename,
@@ -96,26 +138,14 @@ async def upload_document(file: UploadFile = File(...), user_id: str = Form(...)
         }).execute()
 
         document_id = db_response.data[0]['id']
-
-        for chunk in chunks:
-            supabase.table('document_chunks').insert({
-                "document_id": document_id,
-                "content": chunk['text'],
-                "chunk_index": chunk['chunk_id']
-            }).execute()
-
-        if len(chunks) > 0:
-            rag_service.add_document_to_vector_store(chunks, document_id)
-
-        supabase.table('documents').update({
-            "status": "ready"
-        }).eq('id', document_id).execute()
+        background_tasks.add_task(_process_uploaded_document, document_id, temp_file_path)
+        temp_file_path = None
 
         return {
-            "message": "File uploaded and processed successfully!",
+            "message": "File uploaded successfully. Processing has started.",
             "document_id": document_id,
             "filename": file.filename,
-            "chunks_created": len(chunks)
+            "status": "processing"
         }
 
     except Exception as e:

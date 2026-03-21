@@ -41,7 +41,7 @@ function FileUpload({ onUploadSuccess }) {
       setUploadProgress(100)
       setUploadSuccess(true)
       toast.dismiss(toastId)
-      toast.success('Document uploaded and processed successfully!')
+      toast.success('Document uploaded. Processing has started.')
 
       if (onUploadSuccess) onUploadSuccess()
 
@@ -147,7 +147,7 @@ function FileUpload({ onUploadSuccess }) {
       {uploadSuccess && (
         <div className="mt-6 flex items-center gap-3 rounded-[22px] border border-emerald-200 bg-emerald-50/80 p-4 text-emerald-700 shadow-[var(--shadow-soft)]">
           <CheckCircle size={22} />
-          <p className="font-semibold">File uploaded and processed successfully.</p>
+          <p className="font-semibold">File uploaded successfully. Processing is running in the background.</p>
         </div>
       )}
 
